@@ -8,7 +8,7 @@ type
         x, y: integer;
         s: char; { symbol }
         side: SnakeSide;
-        prev: ptrSnake;
+        next: ptrSnake;
     end;
 
     egg = record
@@ -16,45 +16,48 @@ type
        s: char;
    end; 
 
-procedure init(var s: ptrSnake; var e: egg);
+procedure init(var s, t: ptrSnake; var e: egg);
+var
+    tmp: ptrSnake;
 begin
     new(s);
-    s^.x := 1;
+    s^.x := 2;
     s^.y := 1;
     s^.s := '*';
     s^.side := right;
-    s^.prev := nil;
+    s^.next := nil;
+    t := s;
     e.x := (ScreenWidth - 1) div 2;
     e.y := ScreenHeight div 2;
     e.s := '0';
 end;
 
-procedure showSnake(s: ptrSnake);
+procedure showSnake(t: ptrSnake);
 begin
-    while s <> nil do
+    while t <> nil do
     begin
-        GotoXY(s^.x, s^.y);
-        write(s^.s);
-        s := s^.prev;
+        GotoXY(t^.x, t^.y);
+        write(t^.s);
+        t := t^.next;
     end;
 end;
 
-procedure hideSnake(s: ptrSnake);
+procedure hideSnake(t: ptrSnake);
 begin
-    while s <> nil do
+    while t <> nil do
     begin
-        GotoXY(s^.x, s^.y);
+        GotoXY(t^.x, t^.y);
         write(' ');
-        s := s^.prev;
+        t:= t^.next;
     end;
 end;
 
-function collisionSnake(): boolean; { Check apples & crashes with body }
+function collisionSnake(): boolean; { TODO Check apples & crashes with body }
 begin
 
 end;
 
-procedure moveSnake(var s: ptrSnake); { TODO complete MoveSnake }
+procedure moveSnake(var s, t: ptrSnake); { TODO complete MoveSnake }
 var
     data: snake;
     tmp: ptrSnake;
@@ -63,47 +66,53 @@ begin
     { TODO CHECK COLLISION }
 
     hideSnake(s);
-    tmp := s;
-    data := tmp^;
+    tmp := t;
+    data := s^;
     
-    case tmp^.side of   { TODO СДЕЛАТЬ ПРОВЕРКУ НА ПЕРЕХОД ГРАНИЦЫ }
+    case s^.side of   { Move head }
         top:
         begin
-            if tmp^.y = 1 then
-                tmp^.y := ScreenHeight
+            if s^.y = 1 then
+                s^.y := ScreenHeight
             else
-                tmp^.y -= 1;
+                s^.y -= 1;
         end;
         left:
         begin
-            if tmp^.x = 1 then
-                tmp^.x := ScreenWidth
+            if s^.x = 1 then
+                s^.x := ScreenWidth
             else
-                tmp^.x -= 1;
+                s^.x -= 1;
         end;
         bottom:
         begin
-            if tmp^.y = ScreenHeight then
-                tmp^.y := 1
+            if s^.y = ScreenHeight then
+                s^.y := 1
             else
-                tmp^.y += 1;
+                s^.y += 1;
         end;
         right:
         begin
-            if tmp^.x = ScreenWidth then
-                tmp^.x := 1
+            if s^.x = ScreenWidth then
+                s^.x := 1
             else
-                tmp^.x += 1;
+                s^.x += 1;
         end;
     end;
 
-    { ОБРАБЛТАТЬ ОСТАЛЬНОЕ ТЕЛО} {
-    while tmp <> nil do
+    if t <> s then { Body move }
     begin
+        while tmp^.next <> s do
+        begin
+            tmp^.x := tmp^.next^.x;
+            tmp^.y := tmp^.next^.y;
+            tmp := tmp^.next;
+        end;
 
+        tmp^.x := data.x;
+        tmp^.y := data.y;
     end;
-    }
-    
+
     showSnake(s);
 end;
 
@@ -123,13 +132,13 @@ begin
 end;
 
 var
-    sh: ptrSnake; { Snake`s head }
+    sh, st: ptrSnake; { Snake`s head/tail }
     e: egg;
     ch: char;
 begin
     clrscr;
-    init(sh, e);
-    showSnake(sh);
+    init(sh, st, e);
+    showSnake(st);
     while true do
     begin
         if KeyPressed then
@@ -138,7 +147,7 @@ begin
             HandleArrowKey(sh, ch);
         end;
 
-        moveSnake(sh);
+        moveSnake(sh, st);
         delay(100);
     end;
 end.
