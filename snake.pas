@@ -54,9 +54,57 @@ begin
 
 end;
 
-procedure moveSnake(var s: ptrSnake);
+procedure moveSnake(var s: ptrSnake); { TODO complete MoveSnake }
+var
+    data: snake;
+    tmp: ptrSnake;
 begin
-    { CHECK FOR COLLISION }
+
+    { TODO CHECK COLLISION }
+
+    hideSnake(s);
+    tmp := s;
+    data := tmp^;
+    
+    case tmp^.side of   { TODO СДЕЛАТЬ ПРОВЕРКУ НА ПЕРЕХОД ГРАНИЦЫ }
+        top:
+        begin
+            if tmp^.y = 1 then
+                tmp^.y := ScreenHeight
+            else
+                tmp^.y -= 1;
+        end;
+        left:
+        begin
+            if tmp^.x = 1 then
+                tmp^.x := ScreenWidth
+            else
+                tmp^.x -= 1;
+        end;
+        bottom:
+        begin
+            if tmp^.y = ScreenHeight then
+                tmp^.y := 1
+            else
+                tmp^.y += 1;
+        end;
+        right:
+        begin
+            if tmp^.x = ScreenWidth then
+                tmp^.x := 1
+            else
+                tmp^.x += 1;
+        end;
+    end;
+
+    { ОБРАБЛТАТЬ ОСТАЛЬНОЕ ТЕЛО} {
+    while tmp <> nil do
+    begin
+
+    end;
+    }
+    
+    showSnake(s);
 end;
 
 procedure HandleArrowKey(var s: ptrSnake; ch: char);
@@ -66,11 +114,16 @@ begin
         'a': s^.side := left;
         's': s^.side := bottom;
         'd': s^.side := right;
+        #27:
+        begin
+            clrscr;
+            halt(0);
+        end;
     end;
 end;
 
 var
-    sh, tmp: ptrSnake; { Snake`s head }
+    sh: ptrSnake; { Snake`s head }
     e: egg;
     ch: char;
 begin
@@ -86,6 +139,6 @@ begin
         end;
 
         moveSnake(sh);
-        delay(500);
+        delay(100);
     end;
 end.
