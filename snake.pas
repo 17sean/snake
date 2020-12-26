@@ -48,24 +48,51 @@ begin
     begin
         GotoXY(t^.x, t^.y);
         write(' ');
-        t:= t^.next;
+        t := t^.next;
     end;
 end;
 
-function collisionSnake(): boolean; { TODO Check apples & crashes with body }
+procedure addTail(var t: ptrSnake); { TODO add part for tail } 
+var
+    tmp: ptrSnake;
 begin
-
+    new(tmp);
+    tmp^.x := t^.x;
+    tmp^.y := t^.y;
+    tmp^.s := t^.s;
+    tmp^.side := t^.side;
+    tmp^.next := t;
+    t := tmp;
 end;
 
-procedure moveSnake(var s, t: ptrSnake); { TODO complete MoveSnake }
+procedure collisionSnake(s: ptrSnake; var t: ptrSnake; e: egg); { TODo crashes with body, дописать систему яйца}
+begin
+    { for apples }
+    case s^.side of
+        top:
+            if (s^.x = 10 {коор яйца}) and ((s^.y - 1) = 2) then
+                addTail(t); { todo }
+        left:
+            if ((s^.x - 1) = 10) and (s^.y = 2) then
+                addTail(t);
+        bottom:
+            if (s^.x = 10) and ((s^.y + 1) = 2) then
+                addTail(t);
+        right:
+            if ((s^.x + 1) = 10) and (s^.y = 2) then
+                addTail(t);
+    end;
+
+    { TODO FOR CRASHES } 
+end;
+
+procedure moveSnake(var s, t: ptrSnake; e: egg); { TODO complete MoveSnake }
 var
     data: snake;
     tmp: ptrSnake;
 begin
-
-    { TODO CHECK COLLISION }
-
-    hideSnake(s);
+    collisionSnake(s, t, e);
+    hideSnake(t);
     tmp := t;
     data := s^;
     
@@ -108,12 +135,11 @@ begin
             tmp^.y := tmp^.next^.y;
             tmp := tmp^.next;
         end;
-
         tmp^.x := data.x;
         tmp^.y := data.y;
     end;
 
-    showSnake(s);
+    showSnake(t);
 end;
 
 procedure HandleArrowKey(var s: ptrSnake; ch: char);
@@ -132,22 +158,38 @@ begin
 end;
 
 var
-    sh, st: ptrSnake; { Snake`s head/tail }
+    sh, st, tmp: ptrSnake; { Snake`s head/tail } { todo do system for egg }
     e: egg;
     ch: char;
+    count: integer;
 begin
     clrscr;
     init(sh, st, e);
     showSnake(st);
     while true do
     begin
+        gotoxy(10, 2);
+        write('0');
+
+
         if KeyPressed then
         begin
             ch := ReadKey;
             HandleArrowKey(sh, ch);
         end;
 
-        moveSnake(sh, st);
+        moveSnake(sh, st, e);
         delay(100);
+        tmp := st;
+        count := 0;
+        while tmp <> nil do
+        begin
+            count += 1;
+            tmp := tmp^.next;
+        end;
+
+
+        gotoxy(1,1);
+        write(count)
     end;
 end.
