@@ -17,8 +17,6 @@ type
    end; 
 
 procedure init(var s, t: ptrSnake; var e: egg);
-var
-    tmp: ptrSnake;
 begin
     new(s);
     s^.x := 2;
@@ -30,6 +28,49 @@ begin
     e.x := (ScreenWidth - 1) div 2;
     e.y := ScreenHeight div 2;
     e.s := '0';
+end;
+
+procedure showEgg(e: egg);
+begin
+    GotoXY(e.x, e.y);
+    write(e.s);
+end;
+
+procedure hideEgg(e: egg);
+begin
+    GotoXY(e.x, e.y);
+    write(' ');
+end;
+
+function isFreeSpace(t: ptrSnake; x, y: integer): boolean; 
+begin
+    while t <> nil do
+    begin
+        if (x = t^.x) or (y = t^.y) then
+        begin
+            isFreeSpace := false;
+            exit;
+        end;
+
+        t := t^.next;
+    end; 
+
+    isFreeSpace := true;
+end;
+
+procedure moveEgg(var e: egg; t: ptrSnake); 
+begin
+    hideEgg(e);
+    e.x := random(ScreenWidth) + 1;
+    e.y := random(ScreenHeight) + 1;
+
+    while not isFreeSpace(t, e.x, e.y) do
+    begin
+        e.x := random(ScreenWidth) + 1;
+        e.y := random(ScreenHeight) + 1;
+    end;
+
+    showEgg(e);
 end;
 
 procedure showSnake(t: ptrSnake);
@@ -52,7 +93,7 @@ begin
     end;
 end;
 
-procedure addTail(var t: ptrSnake); { TODO add part for tail } 
+procedure addTail(var t: ptrSnake); 
 var
     tmp: ptrSnake;
 begin
@@ -65,28 +106,40 @@ begin
     t := tmp;
 end;
 
-procedure collisionSnake(s: ptrSnake; var t: ptrSnake; e: egg); { TODo crashes with body, дописать систему яйца}
+procedure collisionSnake(s: ptrSnake; var t: ptrSnake; var e: egg); { TODo crashes with body}
 begin
     { for apples }
     case s^.side of
         top:
-            if (s^.x = 10 {коор яйца}) and ((s^.y - 1) = 2) then
-                addTail(t); { todo }
+            if (s^.x = e.x ) and ((s^.y - 1) = e.y) then
+            begin
+                addTail(t); 
+                moveEgg(e, t);
+            end;
         left:
-            if ((s^.x - 1) = 10) and (s^.y = 2) then
+            if ((s^.x - 1) = e.x) and (s^.y = e.y) then
+            begin
                 addTail(t);
+                moveEgg(e, t);
+            end;
         bottom:
-            if (s^.x = 10) and ((s^.y + 1) = 2) then
+            if (s^.x = e.x) and ((s^.y + 1) = e.y) then
+            begin
                 addTail(t);
+                moveEgg(e, t);
+            end;
         right:
-            if ((s^.x + 1) = 10) and (s^.y = 2) then
+            if ((s^.x + 1) = e.x) and (s^.y = e.y) then
+            begin
                 addTail(t);
+                moveEgg(e, t);
+            end;
     end;
 
     { TODO FOR CRASHES } 
 end;
 
-procedure moveSnake(var s, t: ptrSnake; e: egg); { TODO complete MoveSnake }
+procedure moveSnake(var s, t: ptrSnake; var e: egg); 
 var
     data: snake;
     tmp: ptrSnake;
@@ -144,6 +197,7 @@ end;
 
 procedure HandleArrowKey(var s: ptrSnake; ch: char);
 begin
+    {TODO НЕЛЬЗЯ ВЫБИРАТЬ ПРОТИВОЛОЖНОЕ НАПРАВЛЕНИЕ ТЕКУЩЕМУ}
     case ch of
         'w': s^.side := top;
         'a': s^.side := left;
@@ -158,18 +212,20 @@ begin
 end;
 
 var
-    sh, st, tmp: ptrSnake; { Snake`s head/tail } { todo do system for egg }
+    sh, st, tmp: ptrSnake; { Snake`s head/tail } 
     e: egg;
     ch: char;
     count: integer;
 begin
     clrscr;
+    randomize;
     init(sh, st, e);
     showSnake(st);
+    showEgg(e);
     while true do
     begin
-        gotoxy(10, 2);
-        write('0');
+        GotoXY(1, 2);
+        write(e.x, ' ' ,e.y);
 
 
         if KeyPressed then
@@ -177,9 +233,10 @@ begin
             ch := ReadKey;
             HandleArrowKey(sh, ch);
         end;
-
         moveSnake(sh, st, e);
         delay(100);
+
+
         tmp := st;
         count := 0;
         while tmp <> nil do
@@ -187,8 +244,6 @@ begin
             count += 1;
             tmp := tmp^.next;
         end;
-
-
         gotoxy(1,1);
         write(count)
     end;
