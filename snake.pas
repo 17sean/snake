@@ -30,6 +30,16 @@ begin
     e.s := '0';
 end;
 
+procedure loseScreen;
+begin
+    delay(1000);
+    GotoXY((ScreenWidth-8) div 2, ScreenHeight div 2);
+    write('You lose');
+    delay(2000);
+    clrscr;
+    halt(0);
+end;
+
 procedure showEgg(e: egg);
 begin
     GotoXY(e.x, e.y);
@@ -46,15 +56,13 @@ function isFreeSpace(t: ptrSnake; x, y: integer): boolean;
 begin
     while t <> nil do
     begin
-        if (x = t^.x) or (y = t^.y) then
+        if (x = t^.x) and (y = t^.y) then
         begin
             isFreeSpace := false;
             exit;
         end;
-
         t := t^.next;
     end; 
-
     isFreeSpace := true;
 end;
 
@@ -63,13 +71,11 @@ begin
     hideEgg(e);
     e.x := random(ScreenWidth) + 1;
     e.y := random(ScreenHeight) + 1;
-
     while not isFreeSpace(t, e.x, e.y) do
     begin
         e.x := random(ScreenWidth) + 1;
         e.y := random(ScreenHeight) + 1;
     end;
-
     showEgg(e);
 end;
 
@@ -106,37 +112,42 @@ begin
     t := tmp;
 end;
 
-procedure collisionSnake(s: ptrSnake; var t: ptrSnake; var e: egg); { TODo crashes with body}
+procedure collisionSnake(s: ptrSnake; var t: ptrSnake; var e: egg);
 begin
-    { for apples }
     case s^.side of
         top:
-            if (s^.x = e.x ) and ((s^.y - 1) = e.y) then
+            if (s^.x = e.x) and ((s^.y - 1) = e.y) then
             begin
                 addTail(t); 
                 moveEgg(e, t);
-            end;
+            end
+            else if not isFreeSpace(t, s^.x, s^.y-1) then
+                loseScreen;
         left:
             if ((s^.x - 1) = e.x) and (s^.y = e.y) then
             begin
                 addTail(t);
                 moveEgg(e, t);
-            end;
+            end
+            else if not isFreeSpace(t, s^.x-1, s^.y) then
+                loseScreen;
         bottom:
             if (s^.x = e.x) and ((s^.y + 1) = e.y) then
             begin
                 addTail(t);
                 moveEgg(e, t);
-            end;
+            end
+            else if not isFreeSpace(t, s^.x, s^.y+1) then
+                loseScreen;
         right:
             if ((s^.x + 1) = e.x) and (s^.y = e.y) then
             begin
                 addTail(t);
                 moveEgg(e, t);
-            end;
+            end
+            else if not isFreeSpace(t, s^.x+1, s^.y) then
+                loseScreen;
     end;
-
-    { TODO FOR CRASHES } 
 end;
 
 procedure moveSnake(var s, t: ptrSnake; var e: egg); 
@@ -197,12 +208,19 @@ end;
 
 procedure HandleArrowKey(var s: ptrSnake; ch: char);
 begin
-    {TODO НЕЛЬЗЯ ВЫБИРАТЬ ПРОТИВОЛОЖНОЕ НАПРАВЛЕНИЕ ТЕКУЩЕМУ}
     case ch of
-        'w': s^.side := top;
-        'a': s^.side := left;
-        's': s^.side := bottom;
-        'd': s^.side := right;
+        'w':
+            if s^.side <> bottom then
+                s^.side := top;
+        'a': 
+            if s^.side <> right then
+                s^.side := left;
+        's': 
+            if s^.side <> top then
+                s^.side := bottom;
+        'd': 
+            if s^.side <> left then
+                s^.side := right;
         #27:
         begin
             clrscr;
@@ -222,6 +240,8 @@ begin
     init(sh, st, e);
     showSnake(st);
     showEgg(e);
+    {todo проверка на победу}
+    {todo сделать ограниченное поле}
     while true do
     begin
         GotoXY(1, 2);
@@ -245,6 +265,11 @@ begin
             tmp := tmp^.next;
         end;
         gotoxy(1,1);
-        write(count)
+        write(count);
+        gotoxy(1,3);
+        if isFreeSpace(st, 40, 1) then
+            write('free')
+        else
+            write('not free');
     end;
 end.
