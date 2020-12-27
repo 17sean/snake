@@ -1,33 +1,75 @@
 program SnakeGame;
 uses crt;
 type
-    SnakeSide = (top, left, bottom, right);
+    snakeSide = (top, left, bottom, right);
 
     ptrSnake = ^snake;
     snake = record
         x, y: integer;
         s: char; { symbol }
-        side: SnakeSide;
+        side: snakeSide;
         next: ptrSnake;
     end;
 
     egg = record
        x, y: integer;
-       s: char;
+       s: char; { symbol }
    end; 
 
-procedure init(var s, t: ptrSnake; var e: egg);
+   map = record
+       w, h, x, y: integer;
+   end;
+
+procedure init(var s, t: ptrSnake; var e: egg; var m: map); { Intialization }
 begin
+    e.x := (ScreenWidth - 1) div 2;
+    e.y := ScreenHeight div 2;
+    e.s := '0';
+    m.w := 45; 
+    m.h := 18;
+    m.x := (ScreenWidth - m.w) div 2;
+    m.y := (ScreenHeight - m.h) div 2;
     new(s);
-    s^.x := 2;
-    s^.y := 1;
+    s^.x := m.x+1;
+    s^.y := m.y+1;
     s^.s := '*';
     s^.side := right;
     s^.next := nil;
     t := s;
-    e.x := (ScreenWidth - 1) div 2;
-    e.y := ScreenHeight div 2;
-    e.s := '0';
+end;
+
+procedure showMap(m: map);
+var
+    i, k: integer;
+begin
+    for i := 1 to m.h do
+    begin
+    GotoXY(m.x, m.y);
+        write('|'); { default }
+        for k := 2 to m.w-1 do
+            write(' ');
+        write('|');
+
+        if i = 1 then { top }
+        begin
+            GotoXY(m.x, m.y);
+            write(' ');
+            for k := 2 to m.w-1 do
+                write('_');
+            write(' ');
+        end;
+
+        if i = m.h then { bottom }
+        begin 
+            GotoXY(m.x, m.y);
+            write(' ');
+            for k := 2 to m.w-1 do
+                write('-');
+            write(' '); 
+        end;
+
+        m.y += 1;
+    end;
 end;
 
 procedure loseScreen;
@@ -40,16 +82,14 @@ begin
     halt(0);
 end;
 
-procedure showEgg(e: egg);
+procedure winScreen;
 begin
-    GotoXY(e.x, e.y);
-    write(e.s);
-end;
-
-procedure hideEgg(e: egg);
-begin
-    GotoXY(e.x, e.y);
-    write(' ');
+    delay(1000);
+    GotoXY((ScreenWidth-7) div 2, ScreenHeight div 2);
+    write('You win');
+    delay(5000);
+    clrscr;
+    halt(0);
 end;
 
 function isFreeSpace(t: ptrSnake; x, y: integer): boolean; 
@@ -66,15 +106,27 @@ begin
     isFreeSpace := true;
 end;
 
-procedure moveEgg(var e: egg; t: ptrSnake); 
+procedure showEgg(e: egg);
+begin
+    GotoXY(e.x, e.y);
+    write(e.s);
+end;
+
+procedure hideEgg(e: egg);
+begin
+    GotoXY(e.x, e.y);
+    write(' ');
+end;
+
+procedure moveEgg(var e: egg; t: ptrSnake; m: map); 
 begin
     hideEgg(e);
-    e.x := random(ScreenWidth) + 1;
-    e.y := random(ScreenHeight) + 1;
+    e.x := m.x+1 + random(m.w-1);
+    e.y := m.y+1 + random(m.h-1);
     while not isFreeSpace(t, e.x, e.y) do
     begin
-        e.x := random(ScreenWidth) + 1;
-        e.y := random(ScreenHeight) + 1;
+        e.x := m.x+1 + random(m.w-1);
+        e.y := m.y+1 + random(m.h-1);
     end;
     showEgg(e);
 end;
@@ -112,22 +164,22 @@ begin
     t := tmp;
 end;
 
-procedure collisionSnake(s: ptrSnake; var t: ptrSnake; var e: egg);
+procedure collisionSnake(s: ptrSnake; var t: ptrSnake; var e: egg; m: map);
 begin
     case s^.side of
         top:
-            if (s^.x = e.x) and ((s^.y - 1) = e.y) then
+            if (s^.x = e.x) and ((s^.y - 1) = e.y) then { Eggcrash check }
             begin
                 addTail(t); 
-                moveEgg(e, t);
+                moveEgg(e, t, m);
             end
-            else if not isFreeSpace(t, s^.x, s^.y-1) then
+            else if not isFreeSpace(t, s^.x, s^.y-1) then { Tailcrash check }
                 loseScreen;
         left:
             if ((s^.x - 1) = e.x) and (s^.y = e.y) then
             begin
                 addTail(t);
-                moveEgg(e, t);
+                moveEgg(e, t, m);
             end
             else if not isFreeSpace(t, s^.x-1, s^.y) then
                 loseScreen;
@@ -135,7 +187,7 @@ begin
             if (s^.x = e.x) and ((s^.y + 1) = e.y) then
             begin
                 addTail(t);
-                moveEgg(e, t);
+                moveEgg(e, t, m);
             end
             else if not isFreeSpace(t, s^.x, s^.y+1) then
                 loseScreen;
@@ -143,19 +195,19 @@ begin
             if ((s^.x + 1) = e.x) and (s^.y = e.y) then
             begin
                 addTail(t);
-                moveEgg(e, t);
+                moveEgg(e, t, m);
             end
             else if not isFreeSpace(t, s^.x+1, s^.y) then
                 loseScreen;
     end;
 end;
 
-procedure moveSnake(var s, t: ptrSnake; var e: egg); 
+procedure moveSnake(var s, t: ptrSnake; var e: egg; m: map); 
 var
     data: snake;
     tmp: ptrSnake;
 begin
-    collisionSnake(s, t, e);
+    collisionSnake(s, t, e, m);
     hideSnake(t);
     tmp := t;
     data := s^;
@@ -163,35 +215,35 @@ begin
     case s^.side of   { Move head }
         top:
         begin
-            if s^.y = 1 then
-                s^.y := ScreenHeight
+            if s^.y = m.y+1 then
+                s^.y := m.y+m.h-2
             else
                 s^.y -= 1;
         end;
         left:
         begin
-            if s^.x = 1 then
-                s^.x := ScreenWidth
+            if s^.x = m.x+1 then
+                s^.x := m.x+m.w-2
             else
                 s^.x -= 1;
         end;
         bottom:
         begin
-            if s^.y = ScreenHeight then
-                s^.y := 1
+            if s^.y = m.y+m.h-2 then
+                s^.y := m.y+1
             else
                 s^.y += 1;
         end;
         right:
         begin
-            if s^.x = ScreenWidth then
-                s^.x := 1
+            if s^.x = m.x+m.w-2 then
+                s^.x := m.x+1
             else
                 s^.x += 1;
         end;
     end;
 
-    if t <> s then { Body move }
+    if t <> s then { Move tail }
     begin
         while tmp^.next <> s do
         begin
@@ -229,47 +281,40 @@ begin
     end;
 end;
 
+procedure didWin(t: ptrSnake; m: map); 
 var
-    sh, st, tmp: ptrSnake; { Snake`s head/tail } 
+    i, j: integer;
+begin
+    for i := m.x to m.x+m.w-1 do { Looking for free space }
+        for j := m.y to m.y+m.h-1 do
+        begin
+            if isFreeSpace(t, i, j) then
+                exit;
+        end;
+    winScreen; { Victory if no empty space }
+end;
+
+var
+    sh, st: ptrSnake; { Snake`s head/tail } 
     e: egg;
+    m: map;
     ch: char;
-    count: integer;
 begin
     clrscr;
     randomize;
-    init(sh, st, e);
+    init(sh, st, e, m);
+    showMap(m);
     showSnake(st);
     showEgg(e);
-    {todo проверка на победу}
-    {todo сделать ограниченное поле}
     while true do
     begin
-        GotoXY(1, 2);
-        write(e.x, ' ' ,e.y);
-
-
         if KeyPressed then
         begin
             ch := ReadKey;
             HandleArrowKey(sh, ch);
         end;
-        moveSnake(sh, st, e);
+        didWin(st, m);
+        moveSnake(sh, st, e, m);
         delay(100);
-
-
-        tmp := st;
-        count := 0;
-        while tmp <> nil do
-        begin
-            count += 1;
-            tmp := tmp^.next;
-        end;
-        gotoxy(1,1);
-        write(count);
-        gotoxy(1,3);
-        if isFreeSpace(st, 40, 1) then
-            write('free')
-        else
-            write('not free');
     end;
 end.
