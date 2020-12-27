@@ -20,7 +20,63 @@ type
        w, h, x, y: integer;
    end;
 
-procedure init(var s, t: ptrSnake; var e: egg; var m: map); { Intialization }
+procedure screenCheck();
+begin
+    if (ScreenWidth < 45) or (ScreenHeight < 18) then
+    begin
+        GotoXY((ScreenWidth - 25) div 2, (ScreenHeight-1) div 2);
+        write('Resize terminal to 45x18');
+        delay(5000);
+        clrscr;
+        halt(0);
+    end;
+end;
+
+procedure difficultChoose(var speed: integer);
+var
+    x, y: integer;
+    ch: char;
+begin
+    x := (ScreenWidth-17) div 2;
+    y := (ScreenHeight-6) div 2;
+
+    GotoXY(x, y);
+    write('Choose difficult:');
+
+    y += 1;
+    GotoXY(x, y);
+    write('1. Easy');
+
+    y += 1;
+    GotoXY(x, y);
+    write('2. Medium');
+
+    y += 1;
+    GotoXY(x, y);
+    write('3. Hard');
+
+    y += 2;
+    GotoXY(x, y);
+    write('choise: ');
+    ch := ReadKey;
+
+    case ch of
+        '1': speed := 125;
+        '2': speed := 100;
+        '3': speed := 75;
+        else
+        begin
+            clrscr;
+            halt(0);
+        end;
+    end;
+end;
+
+procedure init(
+                var s, t: ptrSnake;
+                var e: egg;
+                var m: map;
+                var speed: integer); { Intialization }
 begin
     e.x := (ScreenWidth - 1) div 2;
     e.y := ScreenHeight div 2;
@@ -36,6 +92,7 @@ begin
     s^.side := right;
     s^.next := nil;
     t := s;
+    difficultChoose(speed);
 end;
 
 procedure showMap(m: map);
@@ -72,7 +129,7 @@ begin
     end;
 end;
 
-procedure loseScreen;
+procedure loseScreen();
 begin
     delay(1000);
     GotoXY((ScreenWidth-8) div 2, ScreenHeight div 2);
@@ -82,7 +139,7 @@ begin
     halt(0);
 end;
 
-procedure winScreen;
+procedure winScreen();
 begin
     delay(1000);
     GotoXY((ScreenWidth-7) div 2, ScreenHeight div 2);
@@ -121,12 +178,12 @@ end;
 procedure moveEgg(var e: egg; t: ptrSnake; m: map); 
 begin
     hideEgg(e);
-    e.x := m.x+1 + random(m.w-1);
-    e.y := m.y+1 + random(m.h-1);
+    e.x := m.x+1 + random(m.w-2);
+    e.y := m.y+1 + random(m.h-2);
     while not isFreeSpace(t, e.x, e.y) do
     begin
-        e.x := m.x+1 + random(m.w-1);
-        e.y := m.y+1 + random(m.h-1);
+        e.x := m.x+1 + random(m.w-2);
+        e.y := m.y+1 + random(m.h-2);
     end;
     showEgg(e);
 end;
@@ -298,11 +355,13 @@ var
     sh, st: ptrSnake; { Snake`s head/tail } 
     e: egg;
     m: map;
+    speed: integer;
     ch: char;
 begin
     clrscr;
+    screenCheck;
     randomize;
-    init(sh, st, e, m);
+    init(sh, st, e, m, speed);
     showMap(m);
     showSnake(st);
     showEgg(e);
@@ -315,6 +374,6 @@ begin
         end;
         didWin(st, m);
         moveSnake(sh, st, e, m);
-        delay(100);
+        delay(speed);
     end;
 end.
