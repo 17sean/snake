@@ -81,10 +81,12 @@ begin
     e.x := (ScreenWidth - 1) div 2;
     e.y := ScreenHeight div 2;
     e.s := '0';
-    m.w := 45; 
+
+    m.w := 45;
     m.h := 18;
     m.x := (ScreenWidth - m.w) div 2;
     m.y := (ScreenHeight - m.h) div 2;
+
     new(s);
     s^.x := m.x+1;
     s^.y := m.y+1;
@@ -92,6 +94,7 @@ begin
     s^.side := right;
     s^.next := nil;
     t := s;
+
     difficultChoose(speed);
 end;
 
@@ -342,8 +345,8 @@ procedure didWin(t: ptrSnake; m: map);
 var
     i, j: integer;
 begin
-    for i := m.x to m.x+m.w-1 do { Looking for free space }
-        for j := m.y to m.y+m.h-1 do
+    for i := m.x+1 to m.x+m.w-2 do { Looking for free space }
+        for j := m.y+1 to m.y+m.h-2 do
         begin
             if isFreeSpace(t, i, j) then
                 exit;
@@ -373,6 +376,7 @@ begin
             HandleArrowKey(sh, ch);
         end;
         didWin(st, m);
+        showEgg(e);
         moveSnake(sh, st, e, m);
         delay(speed);
     end;
