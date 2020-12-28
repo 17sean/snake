@@ -61,7 +61,7 @@ begin
     ch := ReadKey;
 
     case ch of
-        '1': speed := 125;
+        '1': speed := 150;
         '2': speed := 100;
         '3': speed := 75;
         else
@@ -262,12 +262,11 @@ begin
     end;
 end;
 
-procedure moveSnake(var s, t: ptrSnake; var e: egg; m: map); 
+procedure moveSnake(var s, t: ptrSnake; m: map); 
 var
     data: snake;
     tmp: ptrSnake;
 begin
-    collisionSnake(s, t, e, m);
     hideSnake(t);
     tmp := t;
     data := s^;
@@ -364,20 +363,21 @@ begin
     clrscr;
     screenCheck;
     randomize;
-    init(sh, st, e, m, speed);
+    init(sh, st, e, m, speed); 
     showMap(m);
     showSnake(st);
     showEgg(e);
     while true do
     begin
+        didWin(st, m);
+        showEgg(e); { Egg can vanish so i added this }
         if KeyPressed then
         begin
             ch := ReadKey;
             HandleArrowKey(sh, ch);
         end;
-        didWin(st, m);
-        showEgg(e);
-        moveSnake(sh, st, e, m);
+        collisionSnake(sh, st, e, m);
+        moveSnake(sh, st, m);
         delay(speed);
     end;
 end.
