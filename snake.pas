@@ -320,16 +320,16 @@ end;
 procedure HandleArrowKey(var s: ptrSnake; ch: char);
 begin
     case ch of
-        'w':
+        'w', 'W':
             if s^.side <> bottom then
                 s^.side := top;
-        'a': 
+        'a', 'A': 
             if s^.side <> right then
                 s^.side := left;
-        's': 
+        's', 'S': 
             if s^.side <> top then
                 s^.side := bottom;
-        'd': 
+        'd', 'D': 
             if s^.side <> left then
                 s^.side := right;
         #27:
